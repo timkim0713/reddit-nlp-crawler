@@ -1,0 +1,735 @@
+<html>
+<head>
+<title>main.py</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+.s0 { color: #808080;}
+.s1 { color: #a9b7c6;}
+.s2 { color: #cc7832;}
+.s3 { color: #6a8759;}
+.s4 { color: #6897bb;}
+</style>
+</head>
+<body bgcolor="#2b2b2b">
+<table CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#606060" >
+<tr><td><center>
+<font face="Arial, Helvetica" color="#000000">
+main.py</font>
+</center></td></tr></table>
+<pre><span class="s0"># This is a sample Python script.</span>
+
+<span class="s0"># Press Shift+F10 to execute it or replace it with your code.</span>
+<span class="s0"># Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.</span>
+
+<span class="s0">#PYTHON 3</span>
+<span class="s2">import </span><span class="s1">sys</span>
+<span class="s2">from </span><span class="s1">io </span><span class="s2">import </span><span class="s1">StringIO</span>
+<span class="s2">from </span><span class="s1">collections </span><span class="s2">import </span><span class="s1">defaultdict</span>
+<span class="s2">import </span><span class="s1">string</span>
+
+<span class="s0">#nlp</span>
+<span class="s2">import </span><span class="s1">nltk</span>
+<span class="s2">from </span><span class="s1">nltk.sentiment.vader </span><span class="s2">import </span><span class="s1">SentimentIntensityAnalyzer</span>
+<span class="s2">from </span><span class="s1">nltk.tokenize.regexp </span><span class="s2">import </span><span class="s1">RegexpTokenizer</span>
+<span class="s2">from </span><span class="s1">nltk.corpus </span><span class="s2">import </span><span class="s1">stopwords</span>
+<span class="s2">from </span><span class="s1">nltk.corpus </span><span class="s2">import </span><span class="s1">wordnet </span><span class="s2">as </span><span class="s1">wn</span>
+<span class="s2">from </span><span class="s1">nltk.stem </span><span class="s2">import </span><span class="s1">*</span>
+<span class="s2">import </span><span class="s1">spacy</span>
+
+<span class="s0">#crawling</span>
+<span class="s2">import </span><span class="s1">praw</span>
+<span class="s2">from </span><span class="s1">scraper </span><span class="s2">import </span><span class="s1">wikiscrape</span>
+
+<span class="s0">#data processing</span>
+<span class="s2">import </span><span class="s1">json</span>
+
+
+
+<span class="s1">sw_f = open(</span><span class="s3">&quot;sw.json&quot;</span><span class="s1">)</span>
+<span class="s1">sw = set(stopwords.words(</span><span class="s3">'english'</span><span class="s1">) + json.load(sw_f))</span>
+<span class="s1">sentiment = SentimentIntensityAnalyzer()</span>
+<span class="s1">tokenizer = RegexpTokenizer(</span><span class="s3">&quot;\s+&quot;</span><span class="s2">, </span><span class="s1">gaps=</span><span class="s2">True</span><span class="s1">)</span>
+<span class="s1">stemmer = PorterStemmer()</span>
+<span class="s1">nlp = spacy.load(</span><span class="s3">&quot;en_core_web_sm&quot;</span><span class="s1">) </span><span class="s0">#entity extraction</span>
+<span class="s1">sim = spacy.load(</span><span class="s3">&quot;en_core_web_md&quot;</span><span class="s1">) </span><span class="s0">#word vectorization</span>
+<span class="s1">punct_list = string.punctuation</span>
+
+<span class="s2">def </span><span class="s1">makePostList(topic):</span>
+    <span class="s1">reddit = praw.Reddit(client_id=</span><span class="s3">'4qdOoP14AUe-SEN6rClKgg'</span><span class="s2">,</span>
+                         <span class="s1">client_secret=</span><span class="s3">'I1UIBGpdg0ReVxyjxwomjR_vLSzlbg'</span><span class="s2">,</span>
+                         <span class="s1">username=</span><span class="s3">'prawtutorial0803'</span><span class="s2">,</span>
+                         <span class="s1">password=</span><span class="s3">'cookies0803'</span><span class="s2">,</span>
+                         <span class="s1">user_agent=</span><span class="s3">'chaec0803'</span><span class="s1">)</span>
+    <span class="s1">subreddit = reddit.subreddit(topic)</span>
+    <span class="s1">hot_python = subreddit.hot(limit=</span><span class="s4">100</span><span class="s1">)</span>
+    <span class="s1">subreddit_objs = [submission </span><span class="s2">for </span><span class="s1">submission </span><span class="s2">in </span><span class="s1">hot_python]</span>
+    <span class="s1">posts = list()</span>
+    <span class="s1">fdist = nltk.FreqDist()</span>
+
+    <span class="s2">for </span><span class="s1">submission </span><span class="s2">in </span><span class="s1">subreddit_objs:</span>
+        <span class="s2">if not </span><span class="s1">submission.stickied:  </span><span class="s0"># not stickied</span>
+            <span class="s1">submission_dict = dict()</span>
+            <span class="s1">posts.append(submission_dict)</span>
+            <span class="s1">submission_dict[</span><span class="s3">&quot;id&quot;</span><span class="s1">] = str(submission.id)</span>
+            <span class="s1">submission_dict[</span><span class="s3">&quot;title&quot;</span><span class="s1">] = submission.title</span>
+            <span class="s1">submission_dict[</span><span class="s3">&quot;ups&quot;</span><span class="s1">] = submission.ups</span>
+            <span class="s1">submission_dict[</span><span class="s3">&quot;downs&quot;</span><span class="s1">] = submission.downs</span>
+            <span class="s1">submission_dict[</span><span class="s3">&quot;content&quot;</span><span class="s1">] = submission.selftext</span>
+            <span class="s1">submission.comments.replace_more(limit=</span><span class="s4">0</span><span class="s1">)</span>
+            <span class="s1">comments_list = list()</span>
+            <span class="s1">submission_dict[</span><span class="s3">&quot;comments&quot;</span><span class="s1">] = comments_list</span>
+            <span class="s1">submission_dict[</span><span class="s3">&quot;post link&quot;</span><span class="s1">] = submission.permalink</span>
+            <span class="s1">fdist += nltk.FreqDist(nltk.word_tokenize(submission.title + </span><span class="s3">&quot; &quot; </span><span class="s1">+ submission.selftext))</span>
+            <span class="s1">index = </span><span class="s4">0</span>
+
+            <span class="s2">for </span><span class="s1">comment </span><span class="s2">in </span><span class="s1">submission.comments.list():</span>
+                <span class="s1">comment_dict = dict()</span>
+                <span class="s1">comments_list.append(comment_dict)</span>
+                <span class="s1">comment_dict[</span><span class="s3">&quot;dict Id&quot;</span><span class="s1">] = index</span>
+                <span class="s1">comment_dict[</span><span class="s3">&quot;Comment Id&quot;</span><span class="s1">] = comment.id</span>
+                <span class="s1">comment_dict[</span><span class="s3">&quot;Parent Id&quot;</span><span class="s1">] = comment.parent().id</span>
+                <span class="s1">comment_dict[</span><span class="s3">&quot;content&quot;</span><span class="s1">] = comment.body</span>
+                <span class="s1">replies = list()</span>
+                <span class="s1">comment_dict[</span><span class="s3">&quot;replies&quot;</span><span class="s1">] = replies</span>
+                <span class="s2">for </span><span class="s1">com </span><span class="s2">in </span><span class="s1">comments_list:</span>
+                    <span class="s2">if </span><span class="s1">comment.parent() == com[</span><span class="s3">&quot;Comment Id&quot;</span><span class="s1">]:</span>
+                        <span class="s1">com[</span><span class="s3">&quot;replies&quot;</span><span class="s1">].append(index)</span>
+                <span class="s1">fdist += nltk.FreqDist(nltk.word_tokenize(comment.body))</span>
+                <span class="s1">index += </span><span class="s4">1</span>
+
+    <span class="s1">final_fdist = nltk.FreqDist()</span>
+    <span class="s2">for </span><span class="s1">word </span><span class="s2">in </span><span class="s1">fdist:</span>
+        <span class="s2">if </span><span class="s1">word.lower() </span><span class="s2">not in </span><span class="s1">sw_f </span><span class="s2">and </span><span class="s1">word </span><span class="s2">not in </span><span class="s1">punct_list:</span>
+            <span class="s1">final_fdist[word] = fdist[word]</span>
+
+    <span class="s2">return </span><span class="s1">posts</span><span class="s2">, </span><span class="s1">final_fdist</span>
+
+<span class="s2">def </span><span class="s1">make_pos_cfdist(keypost_list):</span>
+    <span class="s1">pos_cfdist = nltk.ConditionalFreqDist()</span>
+    <span class="s2">for </span><span class="s1">post </span><span class="s2">in </span><span class="s1">keypost_list:</span>
+        <span class="s1">comment_set = set()</span>
+        <span class="s1">contents = nltk.word_tokenize(post[</span><span class="s3">&quot;title&quot;</span><span class="s1">] + </span><span class="s3">&quot; &quot; </span><span class="s1">+ post[</span><span class="s3">&quot;content&quot;</span><span class="s1">])</span>
+        <span class="s1">pos_contents = nltk.pos_tag(contents</span><span class="s2">, </span><span class="s1">tagset=</span><span class="s3">&quot;universal&quot;</span><span class="s1">)</span>
+        <span class="s2">for </span><span class="s1">word</span><span class="s2">, </span><span class="s1">pos </span><span class="s2">in </span><span class="s1">pos_contents:</span>
+            <span class="s1">pos_cfdist[word][pos] += </span><span class="s4">1</span>
+        <span class="s2">for </span><span class="s1">com </span><span class="s2">in </span><span class="s1">post[</span><span class="s3">&quot;comments&quot;</span><span class="s1">]:</span>
+            <span class="s1">contents = nltk.word_tokenize(com[</span><span class="s3">&quot;content&quot;</span><span class="s1">])</span>
+            <span class="s1">pos_contents = nltk.pos_tag(contents</span><span class="s2">, </span><span class="s1">tagset=</span><span class="s3">&quot;universal&quot;</span><span class="s1">)</span>
+            <span class="s2">if </span><span class="s1">com[</span><span class="s3">&quot;dict Id&quot;</span><span class="s1">] </span><span class="s2">not in </span><span class="s1">comment_set:</span>
+                <span class="s1">comment_set.add(com[</span><span class="s3">&quot;dict Id&quot;</span><span class="s1">])</span>
+                <span class="s2">for </span><span class="s1">word</span><span class="s2">, </span><span class="s1">pos </span><span class="s2">in </span><span class="s1">pos_contents:</span>
+                    <span class="s1">pos_cfdist[word][pos] += </span><span class="s4">1</span>
+    <span class="s2">return </span><span class="s1">pos_cfdist</span>
+
+<span class="s2">def </span><span class="s1">associativityScore(word1</span><span class="s2">, </span><span class="s1">word2</span><span class="s2">, </span><span class="s1">postDict_list):</span>
+    <span class="s1">score = </span><span class="s4">0</span>
+    <span class="s1">word1_commentids = set()</span>
+    <span class="s1">word2_commentids = set()</span>
+    <span class="s2">for </span><span class="s1">post </span><span class="s2">in </span><span class="s1">postDict_list:</span>
+        <span class="s2">for </span><span class="s1">comment </span><span class="s2">in </span><span class="s1">post[</span><span class="s3">&quot;comments&quot;</span><span class="s1">]:</span>
+            <span class="s2">if </span><span class="s1">word1 </span><span class="s2">in </span><span class="s1">comment[</span><span class="s3">&quot;content&quot;</span><span class="s1">]:</span>
+                <span class="s1">word1_commentids.add(comment[</span><span class="s3">&quot;dict Id&quot;</span><span class="s1">])</span>
+            <span class="s2">if </span><span class="s1">word2 </span><span class="s2">in </span><span class="s1">comment[</span><span class="s3">&quot;content&quot;</span><span class="s1">]:</span>
+                <span class="s1">word2_commentids.add(comment[</span><span class="s3">&quot;dict Id&quot;</span><span class="s1">])</span>
+    <span class="s0"># coming from the same comment or #coming from replies to the same comment or one was in reply to the comment that the other was in</span>
+
+    <span class="s1">word1_commentids = sorted(word1_commentids)</span>
+    <span class="s1">word2_commentids = sorted(word2_commentids)</span>
+    <span class="s0"># t = 0</span>
+    <span class="s1">idx1</span><span class="s2">, </span><span class="s1">idx2 = </span><span class="s4">0</span><span class="s2">, </span><span class="s4">0</span>
+    <span class="s2">while </span><span class="s1">(idx1 != len(word1_commentids) </span><span class="s2">and </span><span class="s1">idx2 != len(word2_commentids)):</span>
+        <span class="s2">if </span><span class="s1">(word1_commentids[idx1] == word2_commentids[idx2]):</span>
+            <span class="s1">score += </span><span class="s4">2</span>
+            <span class="s1">idx1 += </span><span class="s4">1</span>
+            <span class="s1">idx2 += </span><span class="s4">1</span>
+        <span class="s2">elif </span><span class="s1">(word1_commentids[idx1] &gt; word2_commentids[idx2]):</span>
+            <span class="s1">idx2 += </span><span class="s4">1</span>
+        <span class="s2">else</span><span class="s1">:</span>
+            <span class="s1">idx1 += </span><span class="s4">1</span>
+
+    <span class="s2">for </span><span class="s1">post </span><span class="s2">in </span><span class="s1">postDict_list: </span><span class="s0">#1000</span>
+        <span class="s2">for </span><span class="s1">comment </span><span class="s2">in </span><span class="s1">post[</span><span class="s3">&quot;comments&quot;</span><span class="s1">]: </span><span class="s0">#100</span>
+            <span class="s1">len_c_w1 = len(comment[</span><span class="s3">&quot;replies&quot;</span><span class="s1">]) + len(word1_commentids)</span>
+            <span class="s1">len_c_w2 = len(comment[</span><span class="s3">&quot;replies&quot;</span><span class="s1">]) + len(word2_commentids)</span>
+            <span class="s1">set_c_w1 = len(set(comment[</span><span class="s3">&quot;replies&quot;</span><span class="s1">] + word1_commentids))</span>
+            <span class="s1">set_c_w2 = len(set(comment[</span><span class="s3">&quot;replies&quot;</span><span class="s1">] + word2_commentids))</span>
+            <span class="s2">if </span><span class="s1">set_c_w1 &lt; len_c_w1 </span><span class="s2">and </span><span class="s1">set_c_w2 &lt; len_c_w2:</span>
+                <span class="s1">score += </span><span class="s4">1</span>
+            <span class="s2">if </span><span class="s1">comment[</span><span class="s3">&quot;Comment Id&quot;</span><span class="s1">] </span><span class="s2">in </span><span class="s1">word1_commentids </span><span class="s2">and </span><span class="s1">set_c_w2 &lt; len_c_w2:</span>
+                <span class="s1">score += </span><span class="s4">1</span>
+            <span class="s2">if </span><span class="s1">comment[</span><span class="s3">&quot;Comment Id&quot;</span><span class="s1">] </span><span class="s2">in </span><span class="s1">word2_commentids </span><span class="s2">and </span><span class="s1">set_c_w1 &lt; len_c_w1:</span>
+                <span class="s1">score += </span><span class="s4">1</span>
+    <span class="s0">#both are lemmas of same synset (top priority)</span>
+
+    <span class="s2">try</span><span class="s1">:</span>
+        <span class="s1">syn1 = wn.synsets(word1.lower())</span>
+        <span class="s1">syn2 = wn.synsets(word2.lower())</span>
+        <span class="s1">syn1.sort()</span>
+        <span class="s1">syn2.sort()</span>
+        <span class="s0"># t = 0</span>
+        <span class="s1">idx1</span><span class="s2">, </span><span class="s1">idx2 = </span><span class="s4">0</span><span class="s2">, </span><span class="s4">0</span>
+        <span class="s2">while </span><span class="s1">(idx1 != len(syn1) </span><span class="s2">and </span><span class="s1">idx2 != len(syn2)):</span>
+            <span class="s2">if </span><span class="s1">(syn1[idx1] == syn2[idx2]):</span>
+                <span class="s1">score += </span><span class="s4">5</span>
+                <span class="s1">idx1 += </span><span class="s4">1</span>
+                <span class="s1">idx2 += </span><span class="s4">1</span>
+            <span class="s2">elif </span><span class="s1">(syn1[idx1] &gt; syn2[idx2]):</span>
+                <span class="s1">idx2 += </span><span class="s4">1</span>
+            <span class="s2">else</span><span class="s1">:</span>
+                <span class="s1">idx1 += </span><span class="s4">1</span>
+    <span class="s2">except </span><span class="s1">(AttributeError</span><span class="s2">, </span><span class="s1">ValueError):</span>
+        <span class="s1">print(word1</span><span class="s2">, </span><span class="s1">word2)</span>
+    <span class="s2">return </span><span class="s1">score</span>
+
+
+<span class="s2">def </span><span class="s1">get_wiki_def(word):</span>
+    <span class="s1">old_stdout = sys.stdout</span>
+    <span class="s1">new_stdout = StringIO()</span>
+    <span class="s1">sys.stdout = new_stdout</span>
+    <span class="s1">word_wiki = wikiscrape.wiki(word)</span>
+    <span class="s1">output = new_stdout.getvalue()</span>
+    <span class="s1">sys.stdout = old_stdout</span>
+    <span class="s1">lines = output.split(</span><span class="s3">&quot;</span><span class="s2">\n</span><span class="s3">&quot;</span><span class="s1">)</span>
+    <span class="s2">for </span><span class="s1">i </span><span class="s2">in </span><span class="s1">range(len(lines)):</span>
+        <span class="s2">if </span><span class="s3">&quot;Wikipedia page loaded successfully&quot; </span><span class="s2">in </span><span class="s1">lines[i]:</span>
+            <span class="s2">if </span><span class="s1">i + </span><span class="s4">3 </span><span class="s1">&lt; len(lines) - </span><span class="s4">1</span><span class="s1">:</span>
+                <span class="s2">return </span><span class="s1">nltk.sent_tokenize(lines[i + </span><span class="s4">3</span><span class="s1">])</span>
+    <span class="s2">return </span><span class="s3">&quot;blank&quot;</span>
+
+<span class="s2">def </span><span class="s1">makeNE(keypost_list</span><span class="s2">, </span><span class="s1">fdist):</span>
+    <span class="s1">ne_list = []</span>
+    <span class="s2">for </span><span class="s1">post </span><span class="s2">in </span><span class="s1">keypost_list:</span>
+        <span class="s1">doc_post = nlp(post[</span><span class="s3">&quot;title&quot;</span><span class="s1">] + post[</span><span class="s3">&quot;content&quot;</span><span class="s1">])</span>
+        <span class="s2">for </span><span class="s1">entity </span><span class="s2">in </span><span class="s1">doc_post.ents:</span>
+            <span class="s2">if not </span><span class="s1">entity.text.isalpha():</span>
+                <span class="s2">continue</span>
+            <span class="s2">if </span><span class="s1">len(entity.text.split()) == </span><span class="s4">2 </span><span class="s2">and </span><span class="s1">entity.text[</span><span class="s4">0</span><span class="s1">].isupper():</span>
+                <span class="s1">ne_list.append(entity.text)</span>
+            <span class="s2">elif </span><span class="s1">fdist[entity.text.lower()] &lt; fdist[entity.text]:</span>
+                <span class="s1">add = </span><span class="s2">True</span>
+                <span class="s2">for </span><span class="s1">syn </span><span class="s2">in </span><span class="s1">wn.synsets(entity.text):</span>
+                    <span class="s2">if </span><span class="s1">syn.pos() != </span><span class="s3">&quot;n&quot;</span><span class="s1">:</span>
+                        <span class="s1">add = </span><span class="s2">False</span>
+                        <span class="s2">break</span>
+                <span class="s2">if </span><span class="s1">add:</span>
+                    <span class="s1">ne_list.append(entity.text)</span>
+
+        <span class="s2">for </span><span class="s1">com </span><span class="s2">in </span><span class="s1">post[</span><span class="s3">&quot;comments&quot;</span><span class="s1">]:</span>
+            <span class="s1">doc_com = nlp(com[</span><span class="s3">&quot;content&quot;</span><span class="s1">])</span>
+            <span class="s2">for </span><span class="s1">entity </span><span class="s2">in </span><span class="s1">doc_com.ents:</span>
+                <span class="s2">if not </span><span class="s1">entity.text.isalpha():</span>
+                    <span class="s2">continue</span>
+                <span class="s2">if </span><span class="s1">len(entity.text.split()) == </span><span class="s4">2 </span><span class="s2">and </span><span class="s1">entity.text[</span><span class="s4">0</span><span class="s1">].isupper() </span><span class="s2">and </span><span class="s1">entity.text.isalpha():</span>
+                    <span class="s1">ne_list.append(entity.text)</span>
+                <span class="s2">elif </span><span class="s1">fdist[entity.text.lower()] &lt; fdist[entity.text] </span><span class="s2">and </span><span class="s1">entity.text.isalpha():</span>
+                    <span class="s1">add = </span><span class="s2">True</span>
+                    <span class="s2">for </span><span class="s1">syn </span><span class="s2">in </span><span class="s1">wn.synsets(entity.text):</span>
+                        <span class="s2">if </span><span class="s1">syn.pos() != </span><span class="s3">&quot;n&quot;</span><span class="s1">:</span>
+                            <span class="s1">add = </span><span class="s2">False</span>
+                            <span class="s2">break</span>
+                    <span class="s2">if </span><span class="s1">add:</span>
+                        <span class="s1">ne_list.append(entity.text)</span>
+
+    <span class="s2">return </span><span class="s1">list(set(ne_list))</span>
+
+<span class="s2">def </span><span class="s1">listTwentyWords(scores</span><span class="s2">, </span><span class="s1">keyword</span><span class="s2">, </span><span class="s1">topic):</span>
+    <span class="s1">length = </span><span class="s4">0</span>
+    <span class="s1">words = {}</span>
+    <span class="s2">for </span><span class="s1">word</span><span class="s2">, </span><span class="s1">score </span><span class="s2">in </span><span class="s1">scores:</span>
+        <span class="s2">if </span><span class="s1">length &gt;= </span><span class="s4">20</span><span class="s1">:</span>
+            <span class="s2">break</span>
+        <span class="s2">if </span><span class="s1">word.lower() </span><span class="s2">in </span><span class="s1">keyword.lower() </span><span class="s2">or </span><span class="s1">word.lower() </span><span class="s2">in </span><span class="s1">topic.lower() </span><span class="s2">or </span><span class="s1">keyword.lower() </span><span class="s2">in </span><span class="s1">word.lower() </span><span class="s2">or </span><span class="s1">topic.lower() </span><span class="s2">in </span><span class="s1">word.lower() </span><span class="s2">or not </span><span class="s1">word.isalpha():</span>
+            <span class="s2">continue</span>
+        <span class="s1">add = </span><span class="s2">True</span>
+        <span class="s1">word_token = sim(word)[</span><span class="s4">0</span><span class="s1">]</span>
+        <span class="s2">for </span><span class="s1">chosen </span><span class="s2">in </span><span class="s1">words:</span>
+            <span class="s1">chosen_token = sim(chosen)[</span><span class="s4">0</span><span class="s1">]</span>
+            <span class="s1">sim_score = word_token.similarity(chosen_token)</span>
+            <span class="s2">if </span><span class="s1">sim_score &gt; </span><span class="s4">0.7</span><span class="s1">:</span>
+                <span class="s1">add = </span><span class="s2">False</span>
+                <span class="s2">break</span>
+        <span class="s2">if </span><span class="s1">add:</span>
+            <span class="s1">words[word] = []</span>
+            <span class="s1">length += </span><span class="s4">1</span>
+        <span class="s2">else</span><span class="s1">:</span>
+            <span class="s1">words[chosen].append(word)</span>
+    <span class="s2">return </span><span class="s1">words</span>
+
+
+<span class="s2">def </span><span class="s1">keyword_comments(postList</span><span class="s2">, </span><span class="s1">keywords):</span>
+    <span class="s1">result = []</span>
+    <span class="s1">fdist = nltk.FreqDist()</span>
+    <span class="s1">post_set = set()</span>
+    <span class="s1">score = </span><span class="s4">0</span>
+    <span class="s1">length = </span><span class="s4">0</span>
+    <span class="s2">for </span><span class="s1">post </span><span class="s2">in </span><span class="s1">postList:</span>
+        <span class="s1">add = </span><span class="s2">False</span>
+        <span class="s1">content = post[</span><span class="s3">&quot;title&quot;</span><span class="s1">] + </span><span class="s3">&quot; &quot; </span><span class="s1">+ post[</span><span class="s3">&quot;content&quot;</span><span class="s1">]</span>
+        <span class="s1">content_words = nltk.word_tokenize(content)</span>
+        <span class="s2">for </span><span class="s1">keyword </span><span class="s2">in </span><span class="s1">keywords:</span>
+            <span class="s2">if </span><span class="s1">len(keyword.split()) &gt; </span><span class="s4">1 </span><span class="s2">and </span><span class="s1">keyword.lower() </span><span class="s2">in </span><span class="s1">content.lower():</span>
+                <span class="s1">add = </span><span class="s2">True</span>
+            <span class="s2">elif </span><span class="s1">keyword.lower() </span><span class="s2">in </span><span class="s1">content:</span>
+                <span class="s1">add = </span><span class="s2">True</span>
+            <span class="s2">if </span><span class="s1">add:</span>
+                <span class="s1">contents = nltk.sent_tokenize(content)</span>
+                <span class="s1">length = len(contents)</span>
+                <span class="s1">s_score = </span><span class="s4">0</span>
+                <span class="s2">for </span><span class="s1">s </span><span class="s2">in </span><span class="s1">contents:</span>
+                    <span class="s1">s_score += sentiment.polarity_scores(s)[</span><span class="s3">&quot;compound&quot;</span><span class="s1">]</span>
+                <span class="s1">score += s_score/length</span>
+                <span class="s1">result.append(post)</span>
+                <span class="s1">post_set.add(post[</span><span class="s3">&quot;id&quot;</span><span class="s1">])</span>
+                <span class="s1">fdist += nltk.FreqDist(content_words)</span>
+                <span class="s2">break</span>
+
+        <span class="s2">for </span><span class="s1">com </span><span class="s2">in </span><span class="s1">post[</span><span class="s3">&quot;comments&quot;</span><span class="s1">]:</span>
+            <span class="s1">add = </span><span class="s2">False</span>
+            <span class="s1">content = com[</span><span class="s3">&quot;content&quot;</span><span class="s1">]</span>
+            <span class="s1">content_words = nltk.word_tokenize(content)</span>
+            <span class="s2">for </span><span class="s1">keyword </span><span class="s2">in </span><span class="s1">keywords:</span>
+                <span class="s2">if </span><span class="s1">len(keyword.split()) &gt; </span><span class="s4">1 </span><span class="s2">and </span><span class="s1">keyword.lower() </span><span class="s2">in </span><span class="s1">content.lower():</span>
+                    <span class="s1">add = </span><span class="s2">True</span>
+                <span class="s2">elif </span><span class="s1">keyword.lower() </span><span class="s2">in </span><span class="s1">content:</span>
+                    <span class="s1">add = </span><span class="s2">True</span>
+                <span class="s2">if </span><span class="s1">add:</span>
+                    <span class="s2">if </span><span class="s1">post[</span><span class="s3">&quot;id&quot;</span><span class="s1">] </span><span class="s2">not in </span><span class="s1">post_set:</span>
+                        <span class="s1">post_set.add(post[</span><span class="s3">&quot;id&quot;</span><span class="s1">])</span>
+                        <span class="s1">result.append(post)</span>
+                    <span class="s1">contents = nltk.sent_tokenize(content)</span>
+                    <span class="s1">length = len(contents)</span>
+                    <span class="s1">s_score = </span><span class="s4">0</span>
+                    <span class="s2">for </span><span class="s1">s </span><span class="s2">in </span><span class="s1">contents:</span>
+                        <span class="s1">s_score += sentiment.polarity_scores(s)[</span><span class="s3">&quot;compound&quot;</span><span class="s1">]</span>
+                    <span class="s1">score += s_score / length</span>
+                    <span class="s1">fdist += nltk.FreqDist(content_words)</span>
+                    <span class="s2">break</span>
+        <span class="s2">if </span><span class="s1">score != </span><span class="s4">0</span><span class="s1">:</span>
+            <span class="s1">score /= length</span>
+
+    <span class="s1">result_fdist = nltk.FreqDist()</span>
+
+    <span class="s2">for </span><span class="s1">word </span><span class="s2">in </span><span class="s1">fdist:</span>
+        <span class="s2">if </span><span class="s1">word.lower() </span><span class="s2">not in </span><span class="s1">sw </span><span class="s2">and </span><span class="s1">word </span><span class="s2">not in </span><span class="s1">punct_list:</span>
+            <span class="s1">result_fdist[word] = fdist[word]</span>
+
+    <span class="s2">return </span><span class="s1">result</span><span class="s2">, </span><span class="s1">result_fdist</span><span class="s2">, </span><span class="s1">score</span>
+
+
+<span class="s2">def </span><span class="s1">makeHighlight(pos_tags</span><span class="s2">, </span><span class="s1">comwords</span><span class="s2">, </span><span class="s1">pos_cfdist):</span>
+    <span class="s1">highlight_indices = set()</span>
+    <span class="s2">for </span><span class="s1">keyword </span><span class="s2">in </span><span class="s1">comwords:</span>
+        <span class="s1">length = len(keyword.split())</span>
+        <span class="s2">for </span><span class="s1">i </span><span class="s2">in </span><span class="s1">range(</span><span class="s4">0</span><span class="s2">, </span><span class="s1">len(pos_tags) - length</span><span class="s2">, </span><span class="s1">length):</span>
+            <span class="s1">words = </span><span class="s3">' '</span><span class="s1">.join([w </span><span class="s2">for </span><span class="s1">w</span><span class="s2">, </span><span class="s1">pos </span><span class="s2">in </span><span class="s1">pos_tags[i : i + length]])</span>
+            <span class="s2">if not </span><span class="s1">words.isalpha() </span><span class="s2">or </span><span class="s1">words.lower() </span><span class="s2">in </span><span class="s1">sw </span><span class="s2">or </span><span class="s1">words </span><span class="s2">in </span><span class="s1">punct_list:</span>
+                <span class="s2">continue</span>
+            <span class="s1">word = pos_tags[i][</span><span class="s4">0</span><span class="s1">]</span>
+            <span class="s1">pos = pos_tags[i][</span><span class="s4">1</span><span class="s1">]</span>
+            <span class="s1">sim_score = </span><span class="s4">0</span>
+            <span class="s3">&quot;&quot;&quot;if length == 1: 
+                sim_score = sim(keyword)[0].similarity(sim(words)[0])&quot;&quot;&quot;</span>
+            <span class="s2">if </span><span class="s1">keyword.lower() == words.lower() </span><span class="s2">or </span><span class="s1">sim_score &gt; </span><span class="s4">0.7 </span><span class="s2">or </span><span class="s1">words.lower() </span><span class="s2">in </span><span class="s1">keyword.lower() </span><span class="s2">or </span><span class="s1">keyword.lower():</span>
+                <span class="s1">highlight_indices.update(set(range(i</span><span class="s2">, </span><span class="s1">i + length)))</span>
+                <span class="s2">for </span><span class="s1">j </span><span class="s2">in </span><span class="s1">range(</span><span class="s4">1</span><span class="s2">, </span><span class="s4">4</span><span class="s1">):</span>
+                    <span class="s2">if </span><span class="s1">i - j &gt; </span><span class="s4">0</span><span class="s1">:</span>
+                        <span class="s1">w2</span><span class="s2">, </span><span class="s1">pos2 = pos_tags[i - j]</span>
+                        <span class="s1">polarity = sentiment.polarity_scores(w2)</span>
+                        <span class="s2">if </span><span class="s1">(pos2 == </span><span class="s3">&quot;ADJ&quot; </span><span class="s2">or </span><span class="s1">pos2 == </span><span class="s3">&quot;ADV&quot;</span><span class="s1">) </span><span class="s2">and </span><span class="s1">abs(polarity[</span><span class="s3">&quot;compound&quot;</span><span class="s1">]) &gt; </span><span class="s4">0.05</span><span class="s1">:</span>
+                            <span class="s1">highlight_indices.add(i - j)</span>
+                    <span class="s2">if </span><span class="s1">i + j &lt; len(pos_tags) - length:</span>
+                        <span class="s1">w2</span><span class="s2">, </span><span class="s1">pos2 = pos_tags[i + j + length]</span>
+                        <span class="s1">polarity = sentiment.polarity_scores(w2)</span>
+                        <span class="s2">if </span><span class="s1">(pos2 == </span><span class="s3">&quot;ADJ&quot; </span><span class="s2">or </span><span class="s1">pos2 == </span><span class="s3">&quot;ADV&quot;</span><span class="s1">) </span><span class="s2">and </span><span class="s1">abs(polarity[</span><span class="s3">&quot;compound&quot;</span><span class="s1">]) &gt; </span><span class="s4">0.05</span><span class="s1">:</span>
+                            <span class="s1">highlight_indices.add(i + j + length)</span>
+            <span class="s1">polarity = sentiment.polarity_scores(word)</span>
+            <span class="s1">polarity1 = sentiment.polarity_scores(stemmer.stem(word).lower())</span>
+            <span class="s2">if </span><span class="s1">abs(polarity[</span><span class="s3">&quot;pos&quot;</span><span class="s1">] - polarity[</span><span class="s3">&quot;neg&quot;</span><span class="s1">]) &gt; </span><span class="s4">0.3 </span><span class="s2">or </span><span class="s1">abs(abs(polarity1[</span><span class="s3">&quot;pos&quot;</span><span class="s1">] - polarity1[</span><span class="s3">&quot;neg&quot;</span><span class="s1">]) &gt; </span><span class="s4">0.3</span><span class="s1">):</span>
+                <span class="s1">freq_pos = pos_cfdist[word]</span>
+                <span class="s2">if </span><span class="s1">freq_pos.N() &gt; </span><span class="s4">1 </span><span class="s2">and </span><span class="s1">freq_pos.most_common(</span><span class="s4">1</span><span class="s1">)[</span><span class="s4">0</span><span class="s1">][</span><span class="s4">0</span><span class="s1">] == pos:</span>
+                    <span class="s1">highlight_indices.add(i)</span>
+                <span class="s2">else</span><span class="s1">:</span>
+                    <span class="s2">continue</span>
+    <span class="s2">return </span><span class="s1">list(highlight_indices)</span>
+
+<span class="s2">def </span><span class="s1">getPolarity(content):</span>
+    <span class="s1">post_score = </span><span class="s4">0</span>
+    <span class="s1">ss = nltk.sent_tokenize(content)</span>
+    <span class="s2">for </span><span class="s1">s </span><span class="s2">in </span><span class="s1">ss:</span>
+        <span class="s1">post_score += sentiment.polarity_scores(s)[</span><span class="s3">&quot;compound&quot;</span><span class="s1">]</span>
+    <span class="s1">post_score /= len(ss)</span>
+    <span class="s2">return </span><span class="s1">post_score</span>
+
+<span class="s2">def </span><span class="s1">toggleComments(words</span><span class="s2">, </span><span class="s1">keyDict_list</span><span class="s2">, </span><span class="s1">comwords</span><span class="s2">, </span><span class="s1">pos_cfdist):</span>
+    <span class="s1">keywords_result = [</span><span class="s4">0</span><span class="s1">]</span>
+
+    <span class="s2">for </span><span class="s1">post </span><span class="s2">in </span><span class="s1">keyDict_list:</span>
+        <span class="s1">add = </span><span class="s2">False</span>
+        <span class="s1">com_done = set()</span>
+        <span class="s2">for </span><span class="s1">word </span><span class="s2">in </span><span class="s1">words:</span>
+            <span class="s1">add = </span><span class="s2">False</span>
+            <span class="s1">content = post[</span><span class="s3">&quot;title&quot;</span><span class="s1">] + </span><span class="s3">&quot; &quot; </span><span class="s1">+ post[</span><span class="s3">&quot;content&quot;</span><span class="s1">]</span>
+            <span class="s1">content_words = nltk.word_tokenize(content)</span>
+            <span class="s2">if </span><span class="s1">len(word.split()) &gt; </span><span class="s4">1 </span><span class="s2">and </span><span class="s1">word.lower() </span><span class="s2">in </span><span class="s1">content.lower():</span>
+                <span class="s1">add = </span><span class="s2">True</span>
+            <span class="s2">else</span><span class="s1">:</span>
+                <span class="s2">for </span><span class="s1">w </span><span class="s2">in </span><span class="s1">content_words:</span>
+                    <span class="s2">if </span><span class="s1">word.lower() == w.lower():</span>
+                        <span class="s1">add = </span><span class="s2">True</span>
+                        <span class="s2">break</span>
+            <span class="s2">if </span><span class="s1">add:</span>
+                <span class="s1">pos_tags = nltk.pos_tag(content_words</span><span class="s2">, </span><span class="s1">tagset=</span><span class="s3">&quot;universal&quot;</span><span class="s1">)</span>
+                <span class="s1">highlight_indices = makeHighlight(pos_tags</span><span class="s2">, </span><span class="s1">comwords</span><span class="s2">, </span><span class="s1">pos_cfdist)</span>
+                <span class="s1">post_score = getPolarity(post[</span><span class="s3">&quot;title&quot;</span><span class="s1">])</span>
+                <span class="s1">keywords_result[</span><span class="s4">0</span><span class="s1">] += post_score</span>
+                <span class="s1">keywords_result.append((content</span><span class="s2">, </span><span class="s1">post[</span><span class="s3">&quot;id&quot;</span><span class="s1">]</span><span class="s2">, </span><span class="s1">post[</span><span class="s3">&quot;post link&quot;</span><span class="s1">]</span><span class="s2">, </span><span class="s1">post_score</span><span class="s2">, </span><span class="s1">highlight_indices))</span>
+                <span class="s2">break</span>
+
+        <span class="s2">for </span><span class="s1">com </span><span class="s2">in </span><span class="s1">post[</span><span class="s3">&quot;comments&quot;</span><span class="s1">]:</span>
+            <span class="s1">add = </span><span class="s2">False</span>
+            <span class="s2">if </span><span class="s1">com[</span><span class="s3">&quot;dict Id&quot;</span><span class="s1">] </span><span class="s2">in </span><span class="s1">com_done:</span>
+                <span class="s2">continue</span>
+            <span class="s2">else</span><span class="s1">:</span>
+                <span class="s1">com_done.add(com[</span><span class="s3">&quot;dict Id&quot;</span><span class="s1">])</span>
+            <span class="s1">content = nltk.word_tokenize(com[</span><span class="s3">&quot;content&quot;</span><span class="s1">])</span>
+            <span class="s2">for </span><span class="s1">word </span><span class="s2">in </span><span class="s1">keywords:</span>
+                <span class="s2">if </span><span class="s1">len(word.split()) &gt; </span><span class="s4">1 </span><span class="s2">and </span><span class="s1">word.lower() </span><span class="s2">in </span><span class="s1">com[</span><span class="s3">&quot;content&quot;</span><span class="s1">].lower():</span>
+                    <span class="s1">add = </span><span class="s2">True</span>
+                <span class="s2">else</span><span class="s1">:</span>
+                    <span class="s2">for </span><span class="s1">w </span><span class="s2">in </span><span class="s1">content:</span>
+                        <span class="s2">if </span><span class="s1">word.lower() == w.lower():</span>
+                            <span class="s1">add = </span><span class="s2">True</span>
+                            <span class="s2">break</span>
+                <span class="s2">if </span><span class="s1">add:</span>
+                    <span class="s1">pos_tags = nltk.pos_tag(content</span><span class="s2">, </span><span class="s1">tagset=</span><span class="s3">&quot;universal&quot;</span><span class="s1">)</span>
+                    <span class="s1">highlight_indices = makeHighlight(pos_tags</span><span class="s2">, </span><span class="s1">comwords</span><span class="s2">, </span><span class="s1">pos_cfdist)</span>
+                    <span class="s1">post_score = getPolarity(com[</span><span class="s3">&quot;content&quot;</span><span class="s1">])</span>
+                    <span class="s1">keywords_result[</span><span class="s4">0</span><span class="s1">] += post_score</span>
+                    <span class="s1">keywords_result.append((com[</span><span class="s3">&quot;content&quot;</span><span class="s1">]</span><span class="s2">, </span><span class="s1">com[</span><span class="s3">&quot;Comment Id&quot;</span><span class="s1">]</span><span class="s2">, </span><span class="s1">post[</span><span class="s3">&quot;post link&quot;</span><span class="s1">]</span><span class="s2">, </span><span class="s1">post_score</span><span class="s2">, </span><span class="s1">highlight_indices))</span>
+                    <span class="s2">break</span>
+
+    <span class="s1">keywords_result[</span><span class="s4">0</span><span class="s1">] = keywords_result[</span><span class="s4">0</span><span class="s1">]/(len(keywords_result) - </span><span class="s4">1</span><span class="s1">)</span>
+    <span class="s2">return </span><span class="s1">keywords_result</span>
+
+<span class="s0"># Press the green button in the gutter to run the script.</span>
+<span class="s2">if </span><span class="s1">__name__ == </span><span class="s3">'__main__'</span><span class="s1">:</span>
+
+    <span class="s1">topic = input(</span><span class="s3">&quot;What topic would you like to browse on Reddit?: &quot;</span><span class="s1">)</span>
+    <span class="s1">keyword = input(</span><span class="s3">&quot;What keyword would you like to search upon this topic?: &quot;</span><span class="s1">)</span>
+
+    <span class="s3">&quot;&quot;&quot;print(&quot;Prawling Data&quot;) 
+    postDict_list, fdist = makePostList(topic) 
+    with open(&quot;postDict_list.json&quot;, &quot;w&quot;) as outfile: 
+        json.dump(postDict_list, outfile) 
+    with open(&quot;fdist.json&quot;, &quot;w&quot;) as outfile: 
+        json.dump(fdist, outfile) 
+     
+    f = open(&quot;postDict_list.json&quot;, &quot;r&quot;) 
+    postDict_list = json.load(f) 
+ 
+    f = open(&quot;fdist.json&quot;, &quot;r&quot;) 
+    temp_fdist = json.load(f) 
+    fdist = nltk.FreqDist() 
+    for word in temp_fdist: 
+        fdist[word] = temp_fdist[word] 
+ 
+     
+    print(&quot;making pos_cfdist&quot;) 
+    pos_cfdist = make_pos_cfdist(postDict_list) 
+    with open(&quot;pos_cfdist.json&quot;, &quot;w&quot;) as outfile: 
+        json.dump(pos_cfdist, outfile) 
+ 
+    print(&quot;making ne_list&quot;) 
+    ne_list = makeNE(postDict_list, fdist) 
+    with open(&quot;ne_list.json&quot;, &quot;w&quot;) as outfile: 
+        json.dump(ne_list, outfile) 
+     
+ 
+    f = open(&quot;pos_cfdist.json&quot;, &quot;r&quot;) 
+    pos_cfdist = json.load(f) 
+ 
+    f = open(&quot;ne_list.json&quot;, &quot;r&quot;) 
+    ne_list = json.load(f) 
+ 
+    f = open(&quot;buzzwords.json&quot;) 
+    buzzwords = json.load(f) 
+    top_words = [word for word, freq in fdist.most_common(int(len(fdist) * 0.3))] 
+ 
+    print(&quot;scoring words&quot;) 
+    scores = [] 
+ 
+ 
+    token_key = sim(keyword) 
+    for word in top_words: 
+        if (word[0].isupper() and word.lower() in top_words) or word.lower() in buzzwords or word.lower() in sw: 
+            continue 
+        score = associativityScore(word, keyword, postDict_list) * 0.5 
+        print(word, score) 
+        for ne in ne_list: 
+            if word in ne.split(): 
+                continue 
+        sim_score = token_key.similarity(sim(word)[0]) 
+        if sim_score &gt; 0.5: 
+            print(word) 
+            score += 500 * sim_score 
+        scores.append((word, score)) 
+ 
+    print(&quot;scoring ne_list&quot;) 
+    ne_defs = {} 
+ 
+    for ne in ne_list: 
+        score = 0 
+        freq = 0 
+        words = ne.split() 
+        max_score = 0 
+        for word in words: 
+            score += associativityScore(word, keyword, postDict_list) * 0.5 
+            sim_score = token_key.similarity(sim(word)[0]) 
+            if sim_score &gt; max_score: 
+                max_score = sim_score 
+         
+        ent_wiki = get_wiki_def(ne) 
+ 
+        if (isinstance(ent_wiki, list)) and len(ent_wiki) &gt; 0: 
+            print(ne, ent_wiki[0]) 
+            ne_defs[ne] = ent_wiki 
+            definition = ent_wiki[0] 
+            tokens = nlp(definition) 
+            max_score = 0 
+            for tok in tokens: 
+                if &quot;obj&quot; in tok.dep_: 
+                    token_word = sim(tok.text)[0] 
+                    sim_score = token_key.similarity(token_word) 
+                    if sim_score &gt; max_score: 
+                        max_score = sim_score 
+        score += 500 * max_score 
+        score += 50 
+        scores.append((ne, score)) 
+ 
+    scores = sorted(scores, key=lambda x: x[1], reverse=True) 
+ 
+    with open(&quot;ne_defs.json&quot;, &quot;w&quot;) as outfile: 
+        json.dump(ne_defs, outfile) 
+    with open(&quot;scores.json&quot;, &quot;w&quot;) as outfile: 
+        json.dump(scores, outfile)&quot;&quot;&quot;</span>
+
+    <span class="s1">f = open(</span><span class="s3">&quot;postDict_list.json&quot;</span><span class="s2">, </span><span class="s3">&quot;r&quot;</span><span class="s1">)</span>
+    <span class="s1">postDict_list = json.load(f)</span>
+
+    <span class="s1">f = open(</span><span class="s3">&quot;fdist.json&quot;</span><span class="s2">, </span><span class="s3">&quot;r&quot;</span><span class="s1">)</span>
+    <span class="s1">temp_fdist = json.load(f)</span>
+    <span class="s1">fdist = nltk.FreqDist()</span>
+    <span class="s2">for </span><span class="s1">word </span><span class="s2">in </span><span class="s1">temp_fdist:</span>
+        <span class="s1">fdist[word] = temp_fdist[word]</span>
+
+    <span class="s1">f = open(</span><span class="s3">&quot;pos_cfdist.json&quot;</span><span class="s2">, </span><span class="s1">)</span>
+    <span class="s1">temp_pos_cfdist = json.load(f)</span>
+    <span class="s1">pos_cfdist = nltk.ConditionalFreqDist()</span>
+
+    <span class="s2">for </span><span class="s1">word </span><span class="s2">in </span><span class="s1">temp_pos_cfdist:</span>
+        <span class="s1">pos_cfdist[word] = nltk.FreqDist()</span>
+        <span class="s2">for </span><span class="s1">entry </span><span class="s2">in </span><span class="s1">temp_pos_cfdist[word]:</span>
+            <span class="s1">pos_cfdist[word][entry] = temp_pos_cfdist[word][entry]</span>
+
+    <span class="s1">f = open(</span><span class="s3">&quot;ne_list.json&quot;</span><span class="s2">, </span><span class="s3">&quot;r&quot;</span><span class="s1">)</span>
+    <span class="s1">ne_list = json.load(f)</span>
+
+    <span class="s1">f = open(</span><span class="s3">&quot;buzzwords.json&quot;</span><span class="s2">, </span><span class="s3">&quot;r&quot;</span><span class="s1">)</span>
+    <span class="s1">buzzwords = json.load(f)</span>
+
+    <span class="s1">f = open(</span><span class="s3">&quot;scores.json&quot;</span><span class="s2">, </span><span class="s3">&quot;r&quot;</span><span class="s1">)</span>
+    <span class="s1">scores = json.load(f)</span>
+
+    <span class="s1">f = open(</span><span class="s3">&quot;ne_defs.json&quot;</span><span class="s2">, </span><span class="s3">&quot;r&quot;</span><span class="s1">)</span>
+    <span class="s1">ne_defs = json.load(f)</span>
+
+    <span class="s1">keywords_dict = listTwentyWords(scores</span><span class="s2">, </span><span class="s1">keyword</span><span class="s2">, </span><span class="s1">topic)</span>
+    <span class="s1">keywords = list(keywords_dict.keys())</span>
+    <span class="s1">keywords.append(</span><span class="s3">&quot;politics&quot;</span><span class="s1">)</span>
+    <span class="s1">keydict_list</span><span class="s2">, </span><span class="s1">key_fdist</span><span class="s2">, </span><span class="s1">total_pscore = keyword_comments(postDict_list</span><span class="s2">, </span><span class="s1">keywords)</span>
+    <span class="s1">print(keywords)</span>
+    <span class="s2">with </span><span class="s1">open(</span><span class="s3">&quot;keydict_list.json&quot;</span><span class="s2">, </span><span class="s3">&quot;w&quot;</span><span class="s1">) </span><span class="s2">as </span><span class="s1">outfile:</span>
+        <span class="s1">json.dump(keydict_list</span><span class="s2">, </span><span class="s1">outfile)</span>
+
+    <span class="s2">with </span><span class="s1">open(</span><span class="s3">&quot;key_fdist.json&quot;</span><span class="s2">, </span><span class="s3">&quot;w&quot;</span><span class="s1">) </span><span class="s2">as </span><span class="s1">outfile:</span>
+        <span class="s1">json.dump(key_fdist</span><span class="s2">, </span><span class="s1">outfile)</span>
+
+    <span class="s1">print(total_pscore)</span>
+    <span class="s2">for </span><span class="s1">post </span><span class="s2">in </span><span class="s1">keydict_list:</span>
+        <span class="s1">print(post[</span><span class="s3">&quot;title&quot;</span><span class="s1">])</span>
+
+    <span class="s1">keyword_toggle = {}</span>
+    <span class="s2">for </span><span class="s1">key </span><span class="s2">in </span><span class="s1">keywords:</span>
+        <span class="s1">comwords = set()</span>
+        <span class="s1">comwords.update(set(key.split() + topic.split()))</span>
+
+        <span class="s1">token_topic = sim(topic)[</span><span class="s4">0</span><span class="s1">]</span>
+        <span class="s1">token_key = sim(key)[</span><span class="s4">0</span><span class="s1">]</span>
+        <span class="s2">for </span><span class="s1">ne </span><span class="s2">in </span><span class="s1">ne_list:</span>
+            <span class="s1">token_ne = sim(ne)[</span><span class="s4">0</span><span class="s1">]</span>
+            <span class="s1">sim_key = token_key.similarity(token_ne)</span>
+            <span class="s1">sim_topic = token_topic.similarity(token_ne)</span>
+            <span class="s2">if </span><span class="s1">sim_key &gt; </span><span class="s4">0.5 </span><span class="s2">or </span><span class="s1">sim_topic &gt; </span><span class="s4">0.5</span><span class="s1">:</span>
+                <span class="s1">print(ne</span><span class="s2">, </span><span class="s1">sim_key</span><span class="s2">, </span><span class="s1">sim_topic)</span>
+                <span class="s1">comwords.add(ne)</span>
+        <span class="s2">for </span><span class="s1">word </span><span class="s2">in </span><span class="s1">list(key_fdist.keys())[:int(len(key_fdist) * </span><span class="s4">0.3</span><span class="s1">)]:</span>
+            <span class="s1">token_word = sim(word)[</span><span class="s4">0</span><span class="s1">]</span>
+            <span class="s1">sim_key = token_key.similarity(token_word)</span>
+            <span class="s1">sim_topic = token_topic.similarity(token_word)</span>
+            <span class="s2">if </span><span class="s1">sim_key &gt; </span><span class="s4">0.5 </span><span class="s2">or </span><span class="s1">sim_topic &gt; </span><span class="s4">0.5</span><span class="s1">:</span>
+                <span class="s1">print(word</span><span class="s2">, </span><span class="s1">sim_key</span><span class="s2">, </span><span class="s1">sim_topic)</span>
+                <span class="s1">comwords.add(word)</span>
+        <span class="s1">print(comwords)</span>
+        <span class="s1">result = toggleComments(keywords</span><span class="s2">, </span><span class="s1">keydict_list</span><span class="s2">, </span><span class="s1">list(comwords)</span><span class="s2">, </span><span class="s1">pos_cfdist)</span>
+
+        <span class="s1">avg_score = result[</span><span class="s4">0</span><span class="s1">]</span>
+        <span class="s1">keyword_toggle[word] = result</span>
+        <span class="s1">reviews = result[</span><span class="s4">1</span><span class="s1">:</span><span class="s4">11</span><span class="s1">]</span>
+        <span class="s2">for </span><span class="s1">rev </span><span class="s2">in </span><span class="s1">reviews:</span>
+            <span class="s1">content</span><span class="s2">, </span><span class="s1">user_id</span><span class="s2">, </span><span class="s1">post_link</span><span class="s2">, </span><span class="s1">post_score</span><span class="s2">, </span><span class="s1">highlight_indices = rev</span>
+            <span class="s1">print(post_score)</span>
+            <span class="s2">for </span><span class="s1">i</span><span class="s2">, </span><span class="s1">word </span><span class="s2">in </span><span class="s1">enumerate(nltk.word_tokenize(content)):</span>
+                <span class="s2">if </span><span class="s1">i </span><span class="s2">in </span><span class="s1">highlight_indices:</span>
+                    <span class="s1">print(</span><span class="s3">&quot;</span><span class="s2">\&quot;\&quot;</span><span class="s3">{}</span><span class="s2">\&quot;\&quot;</span><span class="s3">&quot;</span><span class="s1">.format(word)</span><span class="s2">, </span><span class="s1">end=</span><span class="s3">&quot; &quot;</span><span class="s1">)</span>
+                <span class="s2">else</span><span class="s1">:</span>
+                    <span class="s1">print(word</span><span class="s2">, </span><span class="s1">end=</span><span class="s3">&quot; &quot;</span><span class="s1">)</span>
+            <span class="s1">print()</span>
+        <span class="s1">print()</span>
+
+<span class="s2">import </span><span class="s1">tkinter </span><span class="s2">as </span><span class="s1">tk</span>
+
+<span class="s1">root = tk.Tk()</span>
+<span class="s1">root.title(</span><span class="s3">&quot;NLP Project&quot;</span><span class="s1">)</span>
+<span class="s1">canvas1 = tk.Canvas(root</span><span class="s2">, </span><span class="s1">width=</span><span class="s4">1200</span><span class="s2">, </span><span class="s1">height=</span><span class="s4">1500</span><span class="s2">,  </span><span class="s1">relief=</span><span class="s3">'raised'</span><span class="s1">)</span>
+<span class="s1">canvas1.pack()</span>
+
+<span class="s1">canvas1.create_text(</span><span class="s4">600</span><span class="s2">, </span><span class="s4">50</span><span class="s2">, </span><span class="s1">fill=</span><span class="s3">&quot;darkblue&quot;</span><span class="s2">, </span><span class="s1">font=</span><span class="s3">&quot;Times 40 italic bold&quot;</span><span class="s2">,</span>
+                    <span class="s1">text=</span><span class="s3">&quot;Daniel's Reddit NLP Project&quot;</span><span class="s1">)</span>
+
+<span class="s1">label2 = tk.Label(</span>
+    <span class="s1">root</span><span class="s2">, </span><span class="s1">text=</span><span class="s3">'What topic would you like to browse on Reddit?: '</span><span class="s1">)</span>
+<span class="s1">label2.config(font=(</span><span class="s3">'helvetica'</span><span class="s2">, </span><span class="s4">20</span><span class="s1">))</span>
+<span class="s1">canvas1.create_window(</span><span class="s4">600</span><span class="s2">, </span><span class="s4">200</span><span class="s2">, </span><span class="s1">window=label2)</span>
+
+<span class="s1">entry1 = tk.Entry(root)</span>
+<span class="s1">canvas1.create_window(</span><span class="s4">600</span><span class="s2">, </span><span class="s4">250</span><span class="s2">, </span><span class="s1">window=entry1)</span>
+
+<span class="s1">label3 = tk.Label(</span>
+    <span class="s1">root</span><span class="s2">, </span><span class="s1">text=</span><span class="s3">'What keyword would you like to search upon this topic?: '</span><span class="s1">)</span>
+<span class="s1">label3.config(font=(</span><span class="s3">'helvetica'</span><span class="s2">, </span><span class="s4">20</span><span class="s1">))</span>
+<span class="s1">canvas1.create_window(</span><span class="s4">600</span><span class="s2">, </span><span class="s4">350</span><span class="s2">, </span><span class="s1">window=label3)</span>
+
+<span class="s1">entry2 = tk.Entry(root)</span>
+<span class="s1">canvas1.create_window(</span><span class="s4">600</span><span class="s2">, </span><span class="s4">400</span><span class="s2">, </span><span class="s1">window=entry2)</span>
+
+<span class="s1">output = {</span><span class="s3">&quot;archer&quot;</span><span class="s1">:</span>
+    <span class="s1">[</span><span class="s4">0.55</span><span class="s2">, </span><span class="s1">[</span><span class="s3">&quot;An San is a great archer!&quot;</span><span class="s2">,</span>
+        <span class="s3">&quot;She won three gggg medals for archery&quot;</span><span class="s2">,</span>
+        <span class="s3">&quot;She is like a Korean Artemis.&quot;</span><span class="s1">]</span><span class="s2">,</span>
+     <span class="s1">[[</span><span class="s4">4</span><span class="s2">, </span><span class="s4">5</span><span class="s1">]</span><span class="s2">, </span><span class="s1">[</span><span class="s4">2</span><span class="s2">, </span><span class="s4">3</span><span class="s2">, </span><span class="s4">4</span><span class="s1">]</span><span class="s2">, </span><span class="s1">[</span><span class="s4">4</span><span class="s2">, </span><span class="s4">5</span><span class="s1">]]]</span><span class="s2">,</span>
+<span class="s3">&quot;medals&quot;</span><span class="s1">: [</span><span class="s4">0.81</span><span class="s2">,</span>
+    <span class="s1">[</span><span class="s3">&quot;She won three gold medals for archery&quot;</span><span class="s2">,</span>
+        <span class="s3">&quot;She may be the first one to win three gold medals&quot;</span><span class="s1">]</span><span class="s2">,</span>
+        <span class="s1">[[</span><span class="s4">2</span><span class="s2">, </span><span class="s4">3</span><span class="s2">, </span><span class="s4">4</span><span class="s1">]</span><span class="s2">, </span><span class="s1">[</span><span class="s4">4</span><span class="s2">, </span><span class="s4">5</span><span class="s1">]]]</span>
+<span class="s1">}</span>
+
+<span class="s1">A = list(output.keys())</span>
+
+<span class="s1">chk = {}</span>
+
+<span class="s1">buttons = []</span>
+
+<span class="s1">AA = []</span>
+<span class="s1">gobackbuttonwin = </span><span class="s2">None</span>
+<span class="s2">def </span><span class="s1">delete():</span>
+    <span class="s2">global </span><span class="s1">buttons</span>
+    <span class="s2">for </span><span class="s1">button </span><span class="s2">in </span><span class="s1">buttons:</span>
+        <span class="s1">canvas1.delete(button)</span>
+
+    <span class="s1">buttons = []</span>
+
+
+<span class="s2">def </span><span class="s1">display():</span>
+    <span class="s2">global </span><span class="s1">AA</span>
+    <span class="s2">global </span><span class="s1">gobackbuttonwin</span>
+    <span class="s2">if </span><span class="s1">len(AA):</span>
+        <span class="s2">for </span><span class="s1">com </span><span class="s2">in </span><span class="s1">AA:</span>
+            <span class="s1">canvas1.delete(com)</span>
+        <span class="s1">AA = []</span>
+        <span class="s1">canvas1.delete(gobackbuttonwin)</span>
+    <span class="s2">for </span><span class="s1">i </span><span class="s2">in </span><span class="s1">range(len(A)):</span>
+        <span class="s1">buttonKey = tk.Button(text=A[i]</span><span class="s2">, </span><span class="s1">command= </span><span class="s2">lambda </span><span class="s1">x=i :showComments(A[x])</span><span class="s2">,</span>
+                            <span class="s1">bg=</span><span class="s3">'brown'</span><span class="s2">, </span><span class="s1">fg=</span><span class="s3">'black'</span><span class="s2">, </span><span class="s1">font=(</span><span class="s3">'helvetica'</span><span class="s2">, </span><span class="s4">15</span><span class="s2">, </span><span class="s3">'bold'</span><span class="s1">))</span>
+        <span class="s1">buttonKeyWindow = canvas1.create_window(</span><span class="s4">600</span><span class="s2">, </span><span class="s4">200</span><span class="s1">+i * </span><span class="s4">40</span><span class="s2">, </span><span class="s1">window=buttonKey)</span>
+        <span class="s1">buttons.append(buttonKeyWindow)</span>
+
+<span class="s2">def </span><span class="s1">showComments(key):</span>
+    <span class="s1">i = </span><span class="s4">0</span>
+    <span class="s1">delete()</span>
+    <span class="s2">global </span><span class="s1">gobackbuttonwin</span>
+    <span class="s1">goback2 = tk.Button(text=</span><span class="s3">&quot;plz&quot;</span><span class="s2">, </span><span class="s1">command=</span><span class="s2">lambda</span><span class="s1">: display()</span><span class="s2">,</span>
+                        <span class="s1">bg=</span><span class="s3">'brown'</span><span class="s2">, </span><span class="s1">fg=</span><span class="s3">'black'</span><span class="s2">, </span><span class="s1">font=(</span><span class="s3">'helvetica'</span><span class="s2">, </span><span class="s4">15</span><span class="s2">, </span><span class="s3">'bold'</span><span class="s1">))</span>
+    <span class="s1">gobackbuttonwin = canvas1.create_window(</span><span class="s4">50</span><span class="s2">, </span><span class="s4">50</span><span class="s2">, </span><span class="s1">window=goback2)</span>
+
+
+    <span class="s0">#if key not in chk or chk[key] == 0:</span>
+    <span class="s1">chk[key] = </span><span class="s4">1</span>
+    <span class="s2">for </span><span class="s1">m</span><span class="s2">,</span><span class="s1">j </span><span class="s2">in </span><span class="s1">enumerate(output[key][</span><span class="s4">1</span><span class="s1">]):</span>
+        <span class="s1">jj = output[key][</span><span class="s4">1</span><span class="s1">][m].split()</span>
+        <span class="s1">psum = [</span><span class="s4">0</span><span class="s1">] * (len(jj)+</span><span class="s4">5</span><span class="s1">)</span>
+        <span class="s2">for </span><span class="s1">k </span><span class="s2">in </span><span class="s1">range(</span><span class="s4">1</span><span class="s2">,</span><span class="s1">len(jj)+</span><span class="s4">1</span><span class="s1">):</span>
+            <span class="s1">psum[k] += psum[k-</span><span class="s4">1</span><span class="s1">] + len(jj[k-</span><span class="s4">1</span><span class="s1">]) + </span><span class="s4">1</span>
+        <span class="s2">for </span><span class="s1">k </span><span class="s2">in </span><span class="s1">range(len(jj)):</span>
+            <span class="s2">if</span><span class="s1">(k </span><span class="s2">not in </span><span class="s1">output[key][</span><span class="s4">2</span><span class="s1">][m]):</span>
+                <span class="s1">t = canvas1.create_text(</span><span class="s4">200</span><span class="s1">+psum[k+</span><span class="s4">1</span><span class="s1">]*</span><span class="s4">13</span><span class="s2">, </span><span class="s4">260</span><span class="s1">+</span><span class="s4">40</span><span class="s1">*i</span><span class="s2">, </span><span class="s1">font=</span><span class="s3">&quot;Times 20 italic bold&quot;</span><span class="s2">,</span>
+                                        <span class="s1">text=jj[k])</span>
+            <span class="s2">else</span><span class="s1">:</span>
+                <span class="s2">if </span><span class="s1">output[key][</span><span class="s4">0</span><span class="s1">] &lt; </span><span class="s4">0.3</span><span class="s1">:</span>
+                    <span class="s1">t = canvas1.create_text(</span><span class="s4">200</span><span class="s1">+psum[k+</span><span class="s4">1</span><span class="s1">]*</span><span class="s4">13</span><span class="s2">, </span><span class="s4">260</span><span class="s1">+</span><span class="s4">40</span><span class="s1">*i</span><span class="s2">, </span><span class="s1">font=</span><span class="s3">&quot;Times 20 italic bold&quot;</span><span class="s2">,</span>
+                                        <span class="s1">text=jj[k]</span><span class="s2">, </span><span class="s1">fill = </span><span class="s3">&quot;red&quot;</span><span class="s1">)</span>
+                <span class="s2">else</span><span class="s1">:</span>
+                    <span class="s1">t = canvas1.create_text(</span><span class="s4">200</span><span class="s1">+psum[k+</span><span class="s4">1</span><span class="s1">]*</span><span class="s4">13</span><span class="s2">, </span><span class="s4">260</span><span class="s1">+</span><span class="s4">40</span><span class="s1">*i</span><span class="s2">, </span><span class="s1">font=</span><span class="s3">&quot;Times 20 italic bold&quot;</span><span class="s2">,</span>
+                                            <span class="s1">text=jj[k]</span><span class="s2">, </span><span class="s1">fill=</span><span class="s3">&quot;blue&quot;</span><span class="s1">)</span>
+
+            <span class="s1">AA.append(t)</span>
+        <span class="s1">i += </span><span class="s4">1</span>
+    <span class="s0">#else:</span>
+    <span class="s0">#chk[key] = 0</span>
+    <span class="s0">#display()</span>
+        <span class="s0">#현재 display 된 코멘트 지우기</span>
+
+
+
+<span class="s2">def </span><span class="s1">handleSearch():</span>
+
+    <span class="s1">x1 = entry1.get()</span>
+    <span class="s1">x2 = entry2.get()</span>
+
+    <span class="s1">label4 = tk.Label(root</span><span class="s2">, </span><span class="s1">text=</span><span class="s3">'The result of the topic: &quot;' </span><span class="s1">+</span>
+                      <span class="s1">x1 + </span><span class="s3">'&quot; and keyword: &quot;'</span><span class="s1">+x2+</span><span class="s3">'&quot; is shown below...'</span><span class="s2">, </span><span class="s1">font=(</span><span class="s3">'helvetica'</span><span class="s2">, </span><span class="s4">20</span><span class="s1">))</span>
+    <span class="s1">canvas1.create_window(</span><span class="s4">600</span><span class="s2">, </span><span class="s4">150</span><span class="s2">, </span><span class="s1">window=label4)</span>
+    <span class="s1">label2.after(</span><span class="s4">0</span><span class="s2">, </span><span class="s1">label2.destroy())</span>
+    <span class="s1">label3.after(</span><span class="s4">0</span><span class="s2">, </span><span class="s1">label3.destroy())</span>
+    <span class="s1">entry1.after(</span><span class="s4">0</span><span class="s2">,</span><span class="s1">entry1.destroy())</span>
+    <span class="s1">entry2.after(</span><span class="s4">0</span><span class="s2">,</span><span class="s1">entry2.destroy())</span>
+    <span class="s1">enter.after(</span><span class="s4">0</span><span class="s2">,</span><span class="s1">enter.destroy())</span>
+
+    <span class="s1">display()</span>
+
+
+<span class="s1">enter = tk.Button(text=</span><span class="s3">'Search'</span><span class="s2">, </span><span class="s1">command=</span><span class="s2">lambda</span><span class="s1">:handleSearch()</span><span class="s2">,</span>
+                    <span class="s1">bg=</span><span class="s3">'brown'</span><span class="s2">, </span><span class="s1">fg=</span><span class="s3">'black'</span><span class="s2">, </span><span class="s1">font=(</span><span class="s3">'helvetica'</span><span class="s2">, </span><span class="s4">9</span><span class="s2">, </span><span class="s3">'bold'</span><span class="s1">))</span>
+<span class="s1">canvas1.create_window(</span><span class="s4">600</span><span class="s2">, </span><span class="s4">500</span><span class="s2">, </span><span class="s1">window=enter)</span>
+
+
+<span class="s1">root.mainloop()</span>
+
+
+<span class="s0"># Create 10-20 buttons (keywords)</span>
+
+
+<span class="s0"># See PyCharm help at https://www.jetbrains.com/help/pycharm/</span>
+<span class="s0">#make highlights better</span>
+<span class="s0">#make sentimentAnalyzer with wordnet emotions, vader, sim --&gt; dataset</span></pre>
+</body>
+</html>
