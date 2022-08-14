@@ -4,63 +4,50 @@
 # Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
 
 # PYTHON 3
+import nlp_runner_org
 import tkinter as tk
 import sys
 from io import StringIO
 from collections import defaultdict
 import string
 
+canvas1 = None
+root = None
+entry1 = None
+entry2 = None
+label2 = None
+label3 = None
 
-root = tk.Tk()
-root.title("NLP Project")
-canvas1 = tk.Canvas(root, width=1200, height=1500,  relief='raised')
-canvas1.pack()
 
-canvas1.create_text(600, 50, fill="darkblue", font="Times 40 italic bold",
-                    text="Daniel's Reddit NLP Project")
+def proc1():
+    root = tk.Tk()
+    root.title("NLP Project")
+    canvas1 = tk.Canvas(root, width=1200, height=1500,  relief='raised')
+    canvas1.pack()
 
-label2 = tk.Label(
-    root, text='What topic would you like to browse on Reddit?: ')
-label2.config(font=('helvetica', 20))
-canvas1.create_window(600, 200, window=label2)
+    canvas1.create_text(600, 50, fill="darkblue", font="Times 40 italic bold",
+                        text="Daniel's Reddit NLP Project")
 
-entry1 = tk.Entry(root)
-canvas1.create_window(600, 250, window=entry1)
+    label2 = tk.Label(
+        root, text='What topic would you like to browse on Reddit?: ')
+    label2.config(font=('helvetica', 20))
+    canvas1.create_window(600, 200, window=label2)
 
-label3 = tk.Label(
-    root, text='What keyword would you like to search upon this topic?: ')
-label3.config(font=('helvetica', 20))
-canvas1.create_window(600, 350, window=label3)
+    entry1 = tk.Entry(root)
+    canvas1.create_window(600, 250, window=entry1)
 
-entry2 = tk.Entry(root)
-canvas1.create_window(600, 400, window=entry2)
+    label3 = tk.Label(
+        root, text='What keyword would you like to search upon this topic?: ')
+    label3.config(font=('helvetica', 20))
+    canvas1.create_window(600, 350, window=label3)
+
+    entry2 = tk.Entry(root)
+    canvas1.create_window(600, 400, window=entry2)
+
+    return entry1, entry2
 
 
 # PASS "entry1 & entry2 to nlp_runner"
-
-# RUN nlp_runner & wait for result from nlp_runner
-# It should return an output like below example.
-output = {"archer":
-          [0.55, ["An San is a great archer!",
-                  "She won three gggg medals for archery",
-                  "She is like a Korean Artemis."],
-           [[4, 5], [1, 2, 3, 4], [4, 5, 6]]],
-          "medals": [0.9,
-                     ["She won three gold medals for archery",
-                      "She may be the first one to win three gold medals"],
-                     [[2, 3, 4, 5], [4, 5, 6, 7, 8, 9]]]
-          }
-
-
-A = list(output.keys())
-
-chk = {}
-
-buttons = []
-
-AA = []
-gobackbuttonwin = None
-
 
 def delete():
     global buttons
@@ -162,6 +149,28 @@ def handleSearch():
 
     display()
 
+
+output = {}
+output = nlp_runner_org.keydict_list
+
+# RUN nlp_runner & wait for result from nlp_runner
+# It should return an output like below example.
+"""output = {"archer":
+          [0.55, ["An San is a great archer!",
+                  "She won three gggg medals for archery",
+                  "She is like a Korean Artemis."],
+           [[4, 5], [1, 2, 3, 4], [4, 5, 6]]],
+          "medals": [0.9,
+                     ["She won three gold medals for archery",
+                      "She may be the first one to win three gold medals"],
+                     [[2, 3, 4, 5], [4, 5, 6, 7, 8, 9]]]
+          }
+"""
+A = list(output.keys())
+chk = {}
+buttons = []
+AA = []
+gobackbuttonwin = None
 
 enter = tk.Button(text='Search', command=lambda: handleSearch(),
                   bg='brown', fg='black', font=('helvetica', 16, 'bold'))

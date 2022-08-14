@@ -1,18 +1,19 @@
 
 # nlp
 import json
-from scraper import wikiscrape
 import praw
 import nltk
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
 from nltk.tokenize.regexp import RegexpTokenizer
+from io import StringIO
 from nltk.corpus import stopwords
 from nltk.corpus import wordnet as wn
 from nltk.stem import *
 import spacy
-
+import string
+import sys
 # crawling
-
+import main_org
 # data processing
 
 
@@ -24,6 +25,7 @@ stemmer = PorterStemmer()
 nlp = spacy.load("en_core_web_sm")  # entity extraction
 sim = spacy.load("en_core_web_md")  # word vectorization
 punct_list = string.punctuation
+keydict_list = {}
 
 
 def makePostList(topic):
@@ -161,7 +163,7 @@ def get_wiki_def(word):
     old_stdout = sys.stdout
     new_stdout = StringIO()
     sys.stdout = new_stdout
-    word_wiki = wikiscrape.wiki(word)
+    # word_wiki = wikiscrape.wiki(word)
     output = new_stdout.getvalue()
     sys.stdout = old_stdout
     lines = output.split("\n")
@@ -398,10 +400,12 @@ def toggleComments(words, keyDict_list, comwords, pos_cfdist):
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
 
-    topic = input("What topic would you like to browse on Reddit?: ")
-    keyword = input("What keyword would you like to search upon this topic?: ")
+    topic, keyword = main_org.proc1()
 
-    """print("Prawling Data")
+    #topic = input("What topic would you like to browse on Reddit?: ")
+    #keyword = input("What keyword would you like to search upon this topic?: ")
+
+    print("Prawling Data")
     postDict_list, fdist = makePostList(topic)
     with open("postDict_list.json", "w") as outfile:
         json.dump(postDict_list, outfile)
@@ -417,7 +421,6 @@ if __name__ == '__main__':
     for word in temp_fdist:
         fdist[word] = temp_fdist[word]
 
-
     print("making pos_cfdist")
     pos_cfdist = make_pos_cfdist(postDict_list)
     with open("pos_cfdist.json", "w") as outfile:
@@ -428,7 +431,6 @@ if __name__ == '__main__':
     with open("ne_list.json", "w") as outfile:
         json.dump(ne_list, outfile)
 
-
     f = open("pos_cfdist.json", "r")
     pos_cfdist = json.load(f)
 
@@ -437,11 +439,11 @@ if __name__ == '__main__':
 
     f = open("buzzwords.json")
     buzzwords = json.load(f)
-    top_words = [word for word, freq in fdist.most_common(int(len(fdist) * 0.3))]
+    top_words = [word for word,
+                 freq in fdist.most_common(int(len(fdist) * 0.3))]
 
     print("scoring words")
     scores = []
-
 
     token_key = sim(keyword)
     for word in top_words:
@@ -495,7 +497,7 @@ if __name__ == '__main__':
     with open("ne_defs.json", "w") as outfile:
         json.dump(ne_defs, outfile)
     with open("scores.json", "w") as outfile:
-        json.dump(scores, outfile)"""
+        json.dump(scores, outfile)
 
     f = open("postDict_list.json", "r")
     postDict_list = json.load(f)
