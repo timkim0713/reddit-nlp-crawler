@@ -10,8 +10,7 @@ import sys
 from io import StringIO
 from collections import defaultdict
 import string
-from threading import Timer
-
+import time
 
 from nlp_runner2 import nlp_runner
 #
@@ -73,9 +72,11 @@ output = {}
 async def handle_reddit_crawler():
     # IMPORTANT  main.py __main__ goes here
 
-    print("handling reddit crawler.......5 sec")
-    await asyncio.sleep(5)
-    print("5 seconds finished!")
+    print("handling reddit crawler.......3 sec")
+
+    time.sleep(3)
+
+    print("3 seconds finished!")
 
     global output
     output = {"archer":
@@ -166,29 +167,26 @@ def showComments(key):
         # 현재 display 된 코멘트 지우기
 
 
-def deleteLabelsEntriesButton():
-    label2.after(0, label2.destroy())
-    label3.after(0, label3.destroy())
-    entry1.after(0, entry1.destroy())
-    entry2.after(0, entry2.destroy())
-    enter.after(0, enter.destroy())
+# def deleteLabelsEntriesButton():
 
 
-def createLoadingScreen():
+# def createLoadingScreen():
 
-    deleteLabelsEntriesButton()
-    loading_text = canvas1.create_text(400, 200, fill="red", font="Times 25 italic bold",
-                                       text="Processing... (Please wait a few minutes...)")
+#     loading_text = canvas1.create_text(400, 200, fill="red", font="Times 25 italic bold",
+#                                        text="Processing... (Please wait a few minutes...)")
 
-    return loading_text
+#     return loading_text
 
 
 async def handleSearch():
     print("HANDLING SEARCH")
 
-    loading_text = createLoadingScreen()
+    #loading_text = createLoadingScreen()
+    loading_text = canvas1.create_text(400, 200, fill="red", font="Times 25 italic bold",
+                                       text="Processing... (Please wait a few minutes...)")
 
     output = await handle_reddit_crawler()
+
     global A
     A = list(output.keys())
     canvas1.delete(loading_text)
@@ -210,7 +208,12 @@ async def handleSearch():
     canvas1.create_window(560, 230, window=label6)
     canvas1.create_window(640, 230, window=label7)
 
-    deleteLabelsEntriesButton()
+    label2.after(0, label2.destroy())
+    label3.after(0, label3.destroy())
+    entry1.after(0, entry1.destroy())
+    entry2.after(0, entry2.destroy())
+    enter.after(0, enter.destroy())
+
     display()
 
 
