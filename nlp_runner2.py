@@ -342,13 +342,13 @@ class nlp_runner:
         post_score /= len(ss)
         return post_score
 
-    def toggleComments(self, words, keyDict_list, comwords, pos_cfdist):
+    def toggleComments(self, keywords, keyDict_list, comwords, pos_cfdist):
         keywords_result = [0]
 
         for post in keyDict_list:
             add = False
             com_done = set()
-            for word in words:
+            for word in keywords:
                 add = False
                 content = post["title"] + " " + post["content"]
                 content_words = nltk.word_tokenize(content)
@@ -376,7 +376,7 @@ class nlp_runner:
                 else:
                     com_done.add(com["dict Id"])
                 content = nltk.word_tokenize(com["content"])
-                for word in self.keywords:
+                for word in keywords:
                     if len(word.split()) > 1 and word.lower() in com["content"].lower():
                         add = True
                     else:

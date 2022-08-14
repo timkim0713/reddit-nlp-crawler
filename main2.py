@@ -59,6 +59,8 @@ canvas1.create_window(600, 400, window=entry2)
 #                      [[2, 3, 4, 5], [4, 5, 6, 7, 8, 9]]]
 #           }
 
+# {'dict Id': 4, 'Comment Id': 'igi0dm1', 'Parent Id': 'w0scch', 'content': 'What an amazing career she has had.', 'replies': []},
+
 
 # A / AA -> list of output
 A = []
@@ -72,23 +74,21 @@ output = {}
 async def handle_reddit_crawler():
     # IMPORTANT  main.py __main__ goes here
 
-    print("handling reddit crawler.......3 sec")
-
-    time.sleep(3)
-
-    print("3 seconds finished!")
-
+    print("handling reddit crawler.......processing...")
     global output
-    output = {"archer":
-              [0.55, ["An San is a great archer!",
-                      "She won three gggg medals for archery",
-                      "She is like a Korean Artemis."],
-               [[4, 5], [1, 2, 3, 4], [4, 5, 6]]],
-              "medals": [0.9,
-                         ["She won three gold medals for archery",
-                          "She may be the first one to win three gold medals"],
-                         [[2, 3, 4, 5], [4, 5, 6, 7, 8, 9]]]
-              }
+
+    output = nlp_runner(entry1.get(), entry2.get()).main()
+    # output = {"archer":
+    #           [0.55, ["An San is a great archer!",
+    #                   "She won three gggg medals for archery",
+    #                   "She is like a Korean Artemis."],
+    #            [[4, 5], [1, 2, 3, 4], [4, 5, 6]]],
+    #           "medals": [0.9,
+    #                      ["She won three gold medals for archery",
+    #                       "She may be the first one to win three gold medals"],
+    #                      [[2, 3, 4, 5], [4, 5, 6, 7, 8, 9]]]
+    #           }
+    print("about to return..")
 
     return output
 
@@ -182,14 +182,19 @@ async def handleSearch():
     print("HANDLING SEARCH")
 
     #loading_text = createLoadingScreen()
-    loading_text = canvas1.create_text(400, 200, fill="red", font="Times 25 italic bold",
-                                       text="Processing... (Please wait a few minutes...)")
+    # loading_text = tk.Label(
+    #     root, text="Processing.. Please Wait!", font=('helvetica', 50))
+
+    # canvas1.create_window(0, 0, window=loading_text)
 
     output = await handle_reddit_crawler()
-
+    print("Successfully received OUTPUT.")
     global A
+
+    print(output)
+
     A = list(output.keys())
-    canvas1.delete(loading_text)
+    # loading_text.after(0, loading_text.destroy())
 
     x1 = entry1.get()
     x2 = entry2.get()
