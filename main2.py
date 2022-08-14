@@ -4,6 +4,7 @@
 # Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
 
 # PYTHON 3
+import asyncio
 import tkinter as tk
 import sys
 from io import StringIO
@@ -38,34 +39,52 @@ canvas1.create_window(600, 400, window=entry2)
 
 
 # PASS "entry1 & entry2 to nlp_runner"
-print(entry1, entry2, "from main2")
+# print(entry1, entry2, "from main2")
 
-nlp_proj = nlp_runner(entry1.get(), entry2.get()).main()
-print("nlp ran.", nlp_proj)
+# nlp_proj = nlp_runner(entry1.get(), entry2.get()).main()
+# print("nlp ran.", nlp_proj)
+
+# output = nlp_proj
+# # RUN nlp_runner & wait for result from nlp_runner
+# # It should return an output like below example.
+# output = {"archer":
+#           [0.55, ["An San is a great archer!",
+#                   "She won three gggg medals for archery",
+#                   "She is like a Korean Artemis."],
+#            [[4, 5], [1, 2, 3, 4], [4, 5, 6]]],
+#           "medals": [0.9,
+#                      ["She won three gold medals for archery",
+#                       "She may be the first one to win three gold medals"],
+#                      [[2, 3, 4, 5], [4, 5, 6, 7, 8, 9]]]
+#           }
 
 
-# RUN nlp_runner & wait for result from nlp_runner
-# It should return an output like below example.
-output = {"archer":
-          [0.55, ["An San is a great archer!",
-                  "She won three gggg medals for archery",
-                  "She is like a Korean Artemis."],
-           [[4, 5], [1, 2, 3, 4], [4, 5, 6]]],
-          "medals": [0.9,
-                     ["She won three gold medals for archery",
-                      "She may be the first one to win three gold medals"],
-                     [[2, 3, 4, 5], [4, 5, 6, 7, 8, 9]]]
-          }
-
-
-A = list(output.keys())
-
+A = []
 chk = {}
-
 buttons = []
-
 AA = []
 gobackbuttonwin = None
+output = {}
+
+
+def handle_amazon_crawler():
+    # IMPORTANT  main.py __main__ goes here
+
+    print("handling reddit crawler.......")
+
+    global output
+    output = {"archer":
+              [0.55, ["An San is a great archer!",
+                      "She won three gggg medals for archery",
+                      "She is like a Korean Artemis."],
+               [[4, 5], [1, 2, 3, 4], [4, 5, 6]]],
+              "medals": [0.9,
+                         ["She won three gold medals for archery",
+                          "She may be the first one to win three gold medals"],
+                         [[2, 3, 4, 5], [4, 5, 6, 7, 8, 9]]]
+              }
+
+    return output
 
 
 def delete():
@@ -141,7 +160,24 @@ def showComments(key):
         # 현재 display 된 코멘트 지우기
 
 
-def handleSearch():
+async def createLoadingScreen():
+
+    delete()
+    loading_text = canvas1.create_text(400, 200, fill="red", font="Times 25 italic bold",
+                                       text="Processing... (Please wait a few minutes...)")
+
+    return loading_text
+
+
+async def handleSearch():
+    print("HANDLING SEARCH")
+
+    loading_text = await createLoadingScreen()
+    canvas1.delete(loading_text)
+
+    output = handle_amazon_crawler()
+    global A
+    A = list(output.keys())
 
     x1 = entry1.get()
     x2 = entry2.get()
@@ -169,7 +205,7 @@ def handleSearch():
     display()
 
 
-enter = tk.Button(text='Search', command=lambda: handleSearch(),
+enter = tk.Button(text='Search', command=lambda: asyncio.run(handleSearch()),
                   bg='brown', fg='black', font=('helvetica', 16, 'bold'))
 canvas1.create_window(600, 500, window=enter)
 
