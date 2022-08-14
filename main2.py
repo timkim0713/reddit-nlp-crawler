@@ -10,6 +10,8 @@ import sys
 from io import StringIO
 from collections import defaultdict
 import string
+from threading import Timer
+
 
 from nlp_runner2 import nlp_runner
 #
@@ -59,6 +61,7 @@ canvas1.create_window(600, 400, window=entry2)
 #           }
 
 
+# A / AA -> list of output
 A = []
 chk = {}
 buttons = []
@@ -67,10 +70,12 @@ gobackbuttonwin = None
 output = {}
 
 
-def handle_reddit_crawler():
+async def handle_reddit_crawler():
     # IMPORTANT  main.py __main__ goes here
 
-    print("handling reddit crawler.......")
+    print("handling reddit crawler.......5 sec")
+    await asyncio.sleep(5)
+    print("5 seconds finished!")
 
     global output
     output = {"archer":
@@ -87,7 +92,8 @@ def handle_reddit_crawler():
     return output
 
 
-def delete():
+def deleteButtons():
+    print("deleting...!")
     global buttons
     for button in buttons:
         canvas1.delete(button)
@@ -113,7 +119,7 @@ def display():
 
 def showComments(key):
     i = 0
-    delete()
+    deleteButtons()
     global gobackbuttonwin
     goback2 = tk.Button(text="Go Back", command=lambda: display(),
                         bg='brown', fg='black', font=('helvetica', 15, 'bold'))
@@ -160,9 +166,17 @@ def showComments(key):
         # 현재 display 된 코멘트 지우기
 
 
-async def createLoadingScreen():
+def deleteLabelsEntriesButton():
+    label2.after(0, label2.destroy())
+    label3.after(0, label3.destroy())
+    entry1.after(0, entry1.destroy())
+    entry2.after(0, entry2.destroy())
+    enter.after(0, enter.destroy())
 
-    delete()
+
+def createLoadingScreen():
+
+    deleteLabelsEntriesButton()
     loading_text = canvas1.create_text(400, 200, fill="red", font="Times 25 italic bold",
                                        text="Processing... (Please wait a few minutes...)")
 
@@ -172,12 +186,12 @@ async def createLoadingScreen():
 async def handleSearch():
     print("HANDLING SEARCH")
 
-    loading_text = await createLoadingScreen()
-    canvas1.delete(loading_text)
+    loading_text = createLoadingScreen()
 
-    output = handle_reddit_crawler()
+    output = await handle_reddit_crawler()
     global A
     A = list(output.keys())
+    canvas1.delete(loading_text)
 
     x1 = entry1.get()
     x2 = entry2.get()
@@ -196,12 +210,7 @@ async def handleSearch():
     canvas1.create_window(560, 230, window=label6)
     canvas1.create_window(640, 230, window=label7)
 
-    label2.after(0, label2.destroy())
-    label3.after(0, label3.destroy())
-    entry1.after(0, entry1.destroy())
-    entry2.after(0, entry2.destroy())
-    enter.after(0, enter.destroy())
-
+    deleteLabelsEntriesButton()
     display()
 
 
