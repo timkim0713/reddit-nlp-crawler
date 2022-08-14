@@ -67,7 +67,7 @@ gobackbuttonwin = None
 output = {}
 
 
-def handle_amazon_crawler():
+def handle_reddit_crawler():
     # IMPORTANT  main.py __main__ goes here
 
     print("handling reddit crawler.......")
@@ -175,7 +175,7 @@ async def handleSearch():
     loading_text = await createLoadingScreen()
     canvas1.delete(loading_text)
 
-    output = handle_amazon_crawler()
+    output = handle_reddit_crawler()
     global A
     A = list(output.keys())
 
