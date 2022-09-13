@@ -343,7 +343,10 @@ class nlp_runner:
         return post_score
 
     def toggleComments(self, keywords, keyDict_list, comwords, pos_cfdist):
-        keywords_result = [0]
+        keywords_result = {}
+
+        for word in keywords:
+            keywords_result[word] = [0, [], []]
 
         for post in keyDict_list:
             add = False
@@ -364,9 +367,9 @@ class nlp_runner:
                     highlight_indices = self.makeHighlight(
                         pos_tags, comwords, pos_cfdist)
                     post_score = self.getPolarity(post["title"])
-                    keywords_result[0] += post_score
-                    keywords_result.append(
-                        (content, post["id"], post["post link"], post_score, highlight_indices))
+                    keywords_result[word][0] += post_score
+                    keywords_result[word][1].append(content)
+                    keywords_result[word][2].append(highlight_indices)
                     break
 
             for com in post["comments"]:
@@ -389,12 +392,14 @@ class nlp_runner:
                         highlight_indices = self.makeHighlight(
                             pos_tags, comwords, pos_cfdist)
                         post_score = self.getPolarity(com["content"])
-                        keywords_result[0] += post_score
-                        keywords_result.append(
-                            (com["content"], com["Comment Id"], post["post link"], post_score, highlight_indices))
+                        keywords_result[word][0] += post_score
+                        keywords_result[word][1].append(com["content"])
+                        keywords_result[word][2].append(highlight_indices)
                         break
 
-        keywords_result[0] = keywords_result[0]/(len(keywords_result) - 1)
+        for word in keywords_result:
+            keywords_result[word][0] = keywords_result[word][0] / \
+                (len(keywords_result[word][1]) - 1)
         return keywords_result
 
     # Press the green button in the gutter to run the script.
@@ -546,9 +551,9 @@ class nlp_runner:
         for post in keydict_list:
             print(post["title"])
 
-        keyword_toggle = {}
+        comwords = set()
+
         for key in keywords:
-            comwords = set()
             comwords.update(set(key.split() + topic.split()))
 
             token_topic = self.sim(topic)[0]
@@ -568,21 +573,15 @@ class nlp_runner:
                     print(word, sim_key, sim_topic)
                     comwords.add(word)
             print(comwords)
-            result = self.toggleComments(keywords, keydict_list,
-                                         list(comwords), pos_cfdist)
 
-            avg_score = result[0]
-            keyword_toggle[word] = result
-            reviews = result[1:11]
-            for rev in reviews:
-                content, user_id, post_link, post_score, highlight_indices = rev
-                print(post_score)
-                for i, word in enumerate(nltk.word_tokenize(content)):
-                    if i in highlight_indices:
-                        print("\"\"{}\"\"".format(word), end=" ")
-                    else:
-                        print(word, end=" ")
-                print()
-            print()
+        result = self.toggleComments(keywords, keydict_list,
+                                     list(comwords), pos_cfdist)
 
-            return keydict_list
+        # file = open("result.txt", "w")
+
+        # for key, value in keyword_toggle.items():
+
+        #     file.write('%s:%s\n' % (key, value))
+
+        # file.close()
+        return result
